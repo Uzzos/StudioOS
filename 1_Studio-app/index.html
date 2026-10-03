@@ -1,0 +1,1853 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Studio OS</title>
+  
+  <!-- Configurazione iOS PWA / Web Clip -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Studio OS">
+  <meta name="theme-color" content="#007aff">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="icon" type="image/svg+xml" href="icons/favicon.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+
+  <style>
+    :root {
+      --bg: #F2F2F7;
+      --card-bg: #FFFFFF;
+      --card-subtle: #F8F9FA;
+      --text: #000000;
+      --text-sec: #8E8E93;
+      --text-ter: #C7C7CC;
+      --accent: #007AFF;
+      --accent-soft: rgba(0, 122, 255, 0.12);
+      --destructive: #FF3B30;
+      --destructive-soft: rgba(255, 59, 48, 0.12);
+      --separator: rgba(60, 60, 67, 0.12);
+      --card-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05), 0 2px 6px -1px rgba(0, 0, 0, 0.02);
+      --modal-bg: #FFFFFF;
+      --tab-bg: rgba(255, 255, 255, 0.82);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #000000;
+        --card-bg: #1C1C1E;
+        --card-subtle: #2C2C2E;
+        --text: #FFFFFF;
+        --text-sec: #8E8E93;
+        --text-ter: #48484A;
+        --accent: #0A84FF;
+        --accent-soft: rgba(10, 132, 255, 0.18);
+        --destructive: #FF453A;
+        --destructive-soft: rgba(255, 69, 58, 0.18);
+        --separator: rgba(84, 84, 88, 0.35);
+        --card-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+        --modal-bg: #1C1C1E;
+        --tab-bg: rgba(28, 28, 30, 0.82);
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    input, textarea {
+      -webkit-user-select: text;
+      user-select: text;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: calc(75px + env(safe-area-inset-bottom));
+      touch-action: manipulation;
+    }
+
+    [hidden] { display: none !important; }
+
+    /* Struttura Viste */
+    .view-container {
+      display: none;
+      padding: 20px 16px 30px;
+      max-width: 600px;
+      margin: 0 auto;
+      width: 100%;
+      animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .view-container.active { display: block; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Header iOS */
+    .header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin-bottom: 22px;
+      padding: 0 4px;
+    }
+    .title-large {
+      font-size: 32px;
+      font-weight: 700;
+      letter-spacing: -0.6px;
+      line-height: 1.1;
+    }
+    .subtitle-date {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-sec);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+    .header-action-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: var(--accent-soft);
+      color: var(--accent);
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: transform 0.15s ease;
+    }
+    .header-action-btn:active { transform: scale(0.92); }
+
+    /* Card iOS */
+    .ios-card {
+      background: var(--card-bg);
+      border-radius: 22px;
+      padding: 20px;
+      margin-bottom: 18px;
+      box-shadow: var(--card-shadow);
+    }
+
+    /* Segmented Control */
+    .segmented-control {
+      display: flex;
+      background: var(--card-subtle);
+      border-radius: 12px;
+      padding: 3px;
+      margin-bottom: 20px;
+    }
+    .segment-btn {
+      flex: 1;
+      padding: 8px 12px;
+      font-size: 13px;
+      font-weight: 600;
+      border: none;
+      background: transparent;
+      color: var(--text-sec);
+      border-radius: 9px;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .segment-btn.active {
+      background: var(--card-bg);
+      color: var(--text);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+    }
+
+    /* Timer Ring & Display */
+    .timer-center-block {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 10px 0 24px;
+    }
+    .ring-wrapper {
+      position: relative;
+      width: 260px;
+      height: 260px;
+      cursor: pointer;
+    }
+    .ring-svg {
+      transform: rotate(-90deg);
+      width: 100%;
+      height: 100%;
+    }
+    .ring-track {
+      fill: none;
+      stroke: var(--card-subtle);
+      stroke-width: 10;
+    }
+    .ring-progress {
+      fill: none;
+      stroke: url(#timerGradient);
+      stroke-width: 10;
+      stroke-linecap: round;
+      transition: stroke-dashoffset 0.35s ease;
+    }
+    .ring-content {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+    }
+    .timer-digits {
+      font-size: 54px;
+      font-weight: 200;
+      letter-spacing: -1.5px;
+      font-variant-numeric: tabular-nums;
+      margin-bottom: 2px;
+    }
+    .timer-tag {
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 20px;
+      background: var(--card-subtle);
+      color: var(--text-sec);
+    }
+
+    /* Preset Chips */
+    .preset-chips {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      margin-bottom: 22px;
+      flex-wrap: wrap;
+    }
+    .preset-chip {
+      padding: 7px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      border-radius: 9999px;
+      background: var(--card-subtle);
+      color: var(--text-sec);
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .preset-chip.active {
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+    .preset-chip:active { transform: scale(0.95); }
+
+    /* Controlli Timer */
+    .timer-controls-row {
+      display: flex;
+      gap: 12px;
+      width: 100%;
+    }
+    .btn-capsule {
+      flex: 1;
+      padding: 15px 20px;
+      border-radius: 9999px;
+      font-size: 16px;
+      font-weight: 600;
+      border: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: transform 0.15s ease, opacity 0.15s ease;
+    }
+    .btn-capsule:active { transform: scale(0.97); opacity: 0.9; }
+    .btn-primary { background: var(--accent); color: #FFFFFF; }
+    .btn-secondary { background: var(--card-subtle); color: var(--text); }
+    .btn-danger { background: var(--destructive); color: #FFFFFF; }
+
+    /* Selettore Materia nel Timer */
+    .subject-selector-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px;
+      background: var(--card-bg);
+      border-radius: 18px;
+      margin-bottom: 20px;
+      box-shadow: var(--card-shadow);
+      cursor: pointer;
+    }
+    .subject-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .color-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* Lista Materie & Accordion */
+    .subject-group {
+      background: var(--card-bg);
+      border-radius: 20px;
+      margin-bottom: 14px;
+      box-shadow: var(--card-shadow);
+      overflow: hidden;
+    }
+    .subject-header-row {
+      display: flex;
+      align-items: center;
+      padding: 16px 18px;
+      gap: 12px;
+      cursor: pointer;
+    }
+    .subject-meta {
+      flex: 1;
+    }
+    .subject-name {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+    .subject-stats-text {
+      font-size: 12px;
+      color: var(--text-sec);
+    }
+    .item-actions {
+      display: flex;
+      gap: 6px;
+    }
+    .icon-action-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      border: none;
+      background: var(--card-subtle);
+      color: var(--text-sec);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+    .icon-action-btn svg { pointer-events: none; }
+    .icon-action-btn:active { background: var(--separator); }
+    .icon-action-btn.delete-btn { color: var(--destructive); }
+
+    /* Task List interna alla materia */
+    .tasks-sublist {
+      background: var(--card-subtle);
+      padding: 10px 14px;
+      border-top: 1px solid var(--separator);
+    }
+    .task-item-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 4px;
+      font-size: 14px;
+    }
+    .task-checkbox {
+      position: relative;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 2px solid var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .task-checkbox.checked {
+      background: var(--accent);
+    }
+    .task-checkbox::before {
+      content: '';
+      position: absolute;
+      inset: -12px;
+    }
+    .task-checkbox.checked::after {
+      content: '';
+      width: 6px;
+      height: 10px;
+      border: solid white;
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg);
+      margin-bottom: 2px;
+    }
+    .task-title-text {
+      flex: 1;
+      font-weight: 500;
+    }
+    .task-title-text.done {
+      text-decoration: line-through;
+      color: var(--text-sec);
+    }
+
+    /* Schede Diario */
+    .diary-entry-card {
+      background: var(--card-bg);
+      border-radius: 18px;
+      padding: 16px;
+      margin-bottom: 12px;
+      box-shadow: var(--card-shadow);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .diary-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .diary-date {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-sec);
+    }
+    .diary-duration-badge {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--accent);
+      background: var(--accent-soft);
+      padding: 3px 9px;
+      border-radius: 12px;
+    }
+    .diary-note-text {
+      font-size: 14px;
+      line-height: 1.4;
+      color: var(--text);
+    }
+    .rating-stars {
+      color: #FF9500;
+      font-size: 13px;
+      letter-spacing: 2px;
+    }
+
+    /* Grafici SVG Statistiche */
+    .stats-card-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 14px;
+    }
+    .chart-container {
+      width: 100%;
+      height: 170px;
+    }
+
+    /* Modali Action Sheet iOS */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.45);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      z-index: 100;
+      display: flex;
+      align-items: flex-end;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .action-sheet {
+      background: var(--modal-bg);
+      border-radius: 32px 32px 0 0;
+      width: 100%;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 16px 20px calc(24px + env(safe-area-inset-bottom));
+      transform: translateY(100%);
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .modal-overlay.active .action-sheet {
+      transform: translateY(0);
+    }
+    .grabber-handle {
+      width: 36px;
+      height: 5px;
+      background: var(--text-ter);
+      border-radius: 4px;
+      margin: 0 auto 16px;
+    }
+    .modal-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+    .modal-title {
+      font-size: 20px;
+      font-weight: 700;
+    }
+    .modal-close-btn {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: var(--card-subtle);
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: var(--text-sec);
+    }
+
+    /* Input & Form */
+    .form-group {
+      margin-bottom: 16px;
+    }
+    .form-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-sec);
+      margin-bottom: 8px;
+      display: block;
+    }
+    .form-input, .form-textarea {
+      width: 100%;
+      padding: 14px 16px;
+      background: var(--card-subtle);
+      border: 1px solid transparent;
+      border-radius: 14px;
+      font-size: 16px;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.2s ease;
+    }
+    .form-input:focus, .form-textarea:focus {
+      border-color: var(--accent);
+    }
+    .color-picker-grid {
+      display: flex;
+      gap: 12px;
+      margin-top: 8px;
+      flex-wrap: wrap;
+    }
+    .color-option {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 3px solid transparent;
+      transition: transform 0.15s ease;
+    }
+    .color-option.selected {
+      border-color: var(--text);
+      transform: scale(1.12);
+    }
+
+    /* Stepper Timer Custom */
+    .stepper-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      margin: 20px 0;
+    }
+    .stepper-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: var(--card-subtle);
+      border: none;
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--accent);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .stepper-val {
+      font-size: 34px;
+      font-weight: 700;
+      min-width: 80px;
+      text-align: center;
+    }
+
+    /* Tab Bar Fissa */
+    .tab-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: calc(62px + env(safe-area-inset-bottom));
+      padding-bottom: env(safe-area-inset-bottom);
+      background: var(--tab-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-top: 0.5px solid var(--separator);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      z-index: 50;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    .tab-button {
+      flex: 1;
+      height: 100%;
+      background: none;
+      border: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      color: var(--text-sec);
+      cursor: pointer;
+      transition: color 0.15s ease;
+    }
+    .tab-button.active {
+      color: var(--accent);
+    }
+    .tab-button svg {
+      width: 22px;
+      height: 22px;
+      pointer-events: none;
+    }
+    .tab-label {
+      font-size: 10px;
+      font-weight: 600;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- SVGs & Definizioni -->
+  <!-- gradiente anello definito dentro l'SVG dell'anello -->
+
+  <!-- ================= VISTA 1: FOCUS / TIMER ================= -->
+  <section id="view-focus" class="view-container active">
+    <div class="header-bar">
+      <div>
+        <div id="todayDateLabel" class="subtitle-date">Oggi</div>
+        <h1 class="title-large">Focus</h1>
+      </div>
+      <button class="header-action-btn" id="openTimerConfigBtn" aria-label="Personalizza Timer">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+      </button>
+    </div>
+
+    <!-- Segmented Mode -->
+    <div class="segmented-control">
+      <button class="segment-btn active" id="modeCountdownBtn">Countdown</button>
+      <button class="segment-btn" id="modeStopwatchBtn">Cronometro</button>
+    </div>
+
+    <!-- Selettore Materia Rapido -->
+    <div class="subject-selector-card" id="selectActiveSubjectCard">
+      <div>
+        <div style="font-size: 11px; color: var(--text-sec); font-weight: 600; text-transform: uppercase;">Materia Attiva</div>
+        <div class="subject-pill" id="activeSubjectDisplay">
+          <span class="color-dot" style="background:#007AFF;"></span>
+          <span>Caricamento...</span>
+        </div>
+      </div>
+      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+    </div>
+
+    <!-- Cerchio Timer -->
+    <div class="timer-center-block">
+      <div class="ring-wrapper" id="ringWrapperClick">
+        <svg class="ring-svg" viewBox="0 0 260 260"><defs><linearGradient id="timerGradient" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="260" y2="260"><stop offset="0%" stop-color="#007AFF"/><stop offset="100%" stop-color="#5856D6"/></linearGradient></defs>
+          <circle class="ring-track" cx="130" cy="130" r="115"></circle>
+          <circle id="ringProgress" class="ring-progress" cx="130" cy="130" r="115" stroke-dasharray="722.56" stroke-dashoffset="0"></circle>
+        </svg>
+        <div class="ring-content">
+          <div class="timer-digits" id="timerDigits">25:00</div>
+          <div class="timer-tag" id="timerModeTag">FOCUS</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Preset Minuti Rapidi -->
+    <div class="preset-chips" id="presetChipsContainer">
+      <button class="preset-chip" data-min="15">15m</button>
+      <button class="preset-chip active" data-min="25">25m</button>
+      <button class="preset-chip" data-min="45">45m</button>
+      <button class="preset-chip" data-min="60">60m</button>
+    </div>
+
+    <!-- Azioni Principali -->
+    <div class="timer-controls-row">
+      <button class="btn-capsule btn-secondary" id="resetTimerBtn">Reset</button>
+      <button class="btn-capsule btn-primary" id="startPauseTimerBtn">
+        <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+        <span>Inizia</span>
+      </button>
+    </div>
+
+    <button class="btn-capsule btn-secondary" id="finishEarlyBtn" style="width:100%; margin-top:12px;" hidden>Termina e salva sessione</button>
+
+    <!-- Riepilogo Oggi -->
+    <div class="ios-card" style="margin-top: 24px;">
+      <div style="font-size: 13px; font-weight: 600; color: var(--text-sec); margin-bottom: 6px;">RIASSUNTO OGGI</div>
+      <div style="display: flex; justify-content: space-between; align-items: baseline;">
+        <span style="font-size: 26px; font-weight: 700;" id="todayFocusHours">0h 0m</span>
+        <span style="font-size: 14px; color: var(--text-sec);" id="todaySessionCount">0 sessioni</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= VISTA 2: MATERIE & TASK ================= -->
+  <section id="view-subjects" class="view-container">
+    <div class="header-bar">
+      <div>
+        <div class="subtitle-date">Obiettivi</div>
+        <h1 class="title-large">Materie</h1>
+      </div>
+      <button class="header-action-btn" id="openNewSubjectModalBtn" aria-label="Nuova Materia">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+      </button>
+    </div>
+
+    <div id="subjectsListContainer"></div>
+  </section>
+
+  <!-- ================= VISTA 3: DIARIO ================= -->
+  <section id="view-diary" class="view-container">
+    <div class="header-bar">
+      <div>
+        <div class="subtitle-date">Registro</div>
+        <h1 class="title-large">Diario</h1>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <input type="text" id="diarySearchInput" class="form-input" placeholder="Cerca nelle note o per materia...">
+    </div>
+
+    <div id="diaryEntriesContainer"></div>
+  </section>
+
+  <!-- ================= VISTA 4: STATISTICHE ================= -->
+  <section id="view-stats" class="view-container">
+    <div class="header-bar">
+      <div>
+        <div class="subtitle-date">Analisi</div>
+        <h1 class="title-large">Statistiche</h1>
+      </div>
+    </div>
+
+    <div class="ios-card">
+      <div class="stats-card-title">Minuti Ultimi 7 Giorni</div>
+      <div class="chart-container" id="weekBarChartContainer"></div>
+    </div>
+
+    <div class="ios-card">
+      <div class="stats-card-title">Distribuzione per Materia</div>
+      <div id="subjectDistributionContainer"></div>
+    </div>
+
+    <!-- Backup e Ripristino JSON -->
+    <div class="ios-card">
+      <div class="stats-card-title">Dati & Backup Offline</div>
+      <p style="font-size: 13px; color: var(--text-sec); margin-bottom: 14px;">Scarica un file .json con tutti i tuoi progressi o importalo su un altro telefono.</p>
+      <p id="backupInfo" style="font-size: 12px; font-weight: 600; margin-bottom: 14px;"></p>
+      <div style="display: flex; gap: 10px;">
+        <button class="btn-capsule btn-secondary" id="exportDataBtn" style="font-size: 14px;">Esporta JSON</button>
+        <button class="btn-capsule btn-secondary" id="importDataTriggerBtn" style="font-size: 14px;">Importa JSON</button>
+        <input type="file" id="importFileInput" accept=".json" style="display: none;">
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= TAB BAR FISSA ================= -->
+  <nav class="tab-bar">
+    <button class="tab-button active" data-target="view-focus">
+      <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+      <span class="tab-label">Focus</span>
+    </button>
+    <button class="tab-button" data-target="view-subjects">
+      <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+      <span class="tab-label">Materie</span>
+    </button>
+    <button class="tab-button" data-target="view-diary">
+      <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+      <span class="tab-label">Diario</span>
+    </button>
+    <button class="tab-button" data-target="view-stats">
+      <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+      <span class="tab-label">Statistiche</span>
+    </button>
+  </nav>
+
+  <!-- ================= MODALI & ACTION SHEETS ================= -->
+
+  <!-- 1. Modale Impostazione Durata Personalizzata Timer -->
+  <div class="modal-overlay" id="timerConfigModal">
+    <div class="action-sheet">
+      <div class="grabber-handle"></div>
+      <div class="modal-header-row">
+        <h2 class="modal-title">Durata Timer</h2>
+        <button class="modal-close-btn" data-close-modal="timerConfigModal">&times;</button>
+      </div>
+      <div class="stepper-container">
+        <button class="stepper-btn" id="stepperMinus5">-5</button>
+        <button class="stepper-btn" id="stepperMinus1">-1</button>
+        <div class="stepper-val"><span id="customMinutesDisplay">25</span><span style="font-size:16px; font-weight:500; color:var(--text-sec); margin-left:2px;">m</span></div>
+        <button class="stepper-btn" id="stepperPlus1">+1</button>
+        <button class="stepper-btn" id="stepperPlus5">+5</button>
+      </div>
+      <button class="btn-capsule btn-primary" id="saveCustomTimerBtn" style="width:100%; margin-top:10px;">Applica Durata</button>
+    </div>
+  </div>
+
+  <!-- 2. Modale Salva Sessione nel Diario -->
+  <div class="modal-overlay" id="saveSessionModal">
+    <div class="action-sheet">
+      <div class="grabber-handle"></div>
+      <div class="modal-header-row">
+        <h2 class="modal-title">Registra Sessione</h2>
+        <button class="modal-close-btn" data-close-modal="saveSessionModal">&times;</button>
+      </div>
+      <div style="font-size: 14px; margin-bottom: 12px; color: var(--text-sec);">
+        Tempo trascorso: <strong id="sessionRecordedMinutes" style="color:var(--text);">25</strong> min su <strong id="sessionRecordedSubject" style="color:var(--text);">Materia</strong>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Livello di Concentrazione</label>
+        <div id="modalStarRating" style="display:flex; gap:10px; font-size:24px; cursor:pointer;">
+          <span data-star="1">★</span>
+          <span data-star="2">★</span>
+          <span data-star="3">★</span>
+          <span data-star="4">★</span>
+          <span data-star="5">★</span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Note & Argomenti Trattati</label>
+        <textarea id="sessionNotesInput" class="form-textarea" rows="3" placeholder="Es. Letto cap. 3, svolti esercizi di riepilogo..."></textarea>
+      </div>
+      <div style="display:flex; gap:10px; margin-top: 10px;">
+        <button class="btn-capsule btn-secondary" data-close-modal="saveSessionModal">Scarta</button>
+        <button class="btn-capsule btn-primary" id="confirmSaveSessionBtn">Salva nel Diario</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Modale Crea/Modifica Materia -->
+  <div class="modal-overlay" id="subjectModal">
+    <div class="action-sheet">
+      <div class="grabber-handle"></div>
+      <div class="modal-header-row">
+        <h2 class="modal-title" id="subjectModalTitle">Nuova Materia</h2>
+        <button class="modal-close-btn" data-close-modal="subjectModal">&times;</button>
+      </div>
+      <input type="hidden" id="editSubjectId">
+      <div class="form-group">
+        <label class="form-label">Nome Materia</label>
+        <input type="text" id="subjectNameInput" class="form-input" placeholder="Es. Diritto Privato, Analisi 1...">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Colore Identificativo</label>
+        <div class="color-picker-grid" id="colorPickerGrid"></div>
+      </div>
+      <button class="btn-capsule btn-primary" id="saveSubjectBtn" style="width:100%; margin-top:14px;">Salva Materia</button>
+    </div>
+  </div>
+
+  <!-- 4. Modale Nuovo Task -->
+  <div class="modal-overlay" id="taskModal">
+    <div class="action-sheet">
+      <div class="grabber-handle"></div>
+      <div class="modal-header-row">
+        <h2 class="modal-title">Nuovo Obiettivo</h2>
+        <button class="modal-close-btn" data-close-modal="taskModal">&times;</button>
+      </div>
+      <input type="hidden" id="taskTargetSubjectId">
+      <div class="form-group">
+        <label class="form-label">Descrizione del Task</label>
+        <input type="text" id="taskTitleInput" class="form-input" placeholder="Es. Esercizi pag. 140, Leggere capitolo 2...">
+      </div>
+      <button class="btn-capsule btn-primary" id="saveTaskBtn" style="width:100%; margin-top:10px;">Aggiungi Obiettivo</button>
+    </div>
+  </div>
+
+  <!-- 5. Action Sheet Conferma Eliminazione -->
+  <div class="modal-overlay" id="confirmActionModal">
+    <div class="action-sheet">
+      <div class="grabber-handle"></div>
+      <div class="modal-header-row">
+        <h2 class="modal-title" id="confirmModalTitle">Conferma</h2>
+      </div>
+      <p id="confirmModalMessage" style="font-size:14px; color:var(--text-sec); margin-bottom:20px; line-height:1.4;">Sei sicuro di procedere?</p>
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        <button class="btn-capsule btn-danger" id="confirmActionConfirmBtn">Elimina Definitivamente</button>
+        <button class="btn-capsule btn-secondary" data-close-modal="confirmActionModal">Annulla</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= JAVASCRIPT VANILLA LOGICA ================= -->
+  <script>
+    /* 1. STATO GLOBALE E PERSISTENZA LOCALSTORAGE */
+    const STORAGE_KEY = 'study_os_data_v1';
+    const COLOR_PALETTE = ['#007AFF', '#34C759', '#FF9500', '#AF52DE', '#FF2D55', '#5856D6', '#5AC8FA', '#FF3B30'];
+
+    const DEFAULT_DATA = {
+      settings: {
+        timerDurationMinutes: 25,
+        timerMode: 'countdown'
+      },
+      selectedSubjectId: 'sub_default_1',
+      subjects: [
+        { id: 'sub_default_1', name: 'Analisi Matematica', color: '#007AFF' },
+        { id: 'sub_default_2', name: 'Economia Aziendale', color: '#34C759' }
+      ],
+      tasks: [
+        { id: 'tsk_1', subjectId: 'sub_default_1', title: 'Ripasso Derivate e Limiti', done: false }
+      ],
+      logs: []
+    };
+
+    let state = loadInitialState();
+
+    function normalizeState(raw) {
+      if (!raw || typeof raw !== 'object') return JSON.parse(JSON.stringify(DEFAULT_DATA));
+      const colorOk = c => typeof c === 'string' && /^#[0-9a-fA-F]{6}$/.test(c);
+      const num = (v, d) => Number.isFinite(Number(v)) ? Number(v) : d;
+      const s = raw.settings || {};
+      const out = {
+        settings: {
+          timerDurationMinutes: Math.max(1, Math.min(180, Math.round(num(s.timerDurationMinutes, 25)))),
+          timerMode: s.timerMode === 'stopwatch' ? 'stopwatch' : 'countdown'
+        },
+        subjects: [], tasks: [], logs: [], selectedSubjectId: null,
+        meta: { lastBackup: num(raw.meta && raw.meta.lastBackup, 0) }
+      };
+      (Array.isArray(raw.subjects) ? raw.subjects : []).forEach(x => {
+        if (x && x.id) out.subjects.push({ id: String(x.id), name: String(x.name || 'Materia').slice(0, 60), color: colorOk(x.color) ? x.color : COLOR_PALETTE[0] });
+      });
+      const ids = new Set(out.subjects.map(x => x.id));
+      (Array.isArray(raw.tasks) ? raw.tasks : []).forEach(t => {
+        if (t && t.id && ids.has(String(t.subjectId))) out.tasks.push({ id: String(t.id), subjectId: String(t.subjectId), title: String(t.title || '').slice(0, 200), done: !!t.done });
+      });
+      (Array.isArray(raw.logs) ? raw.logs : []).forEach(l => {
+        if (!l || !l.id) return;
+        out.logs.push({
+          id: String(l.id),
+          subjectId: l.subjectId == null ? null : String(l.subjectId),
+          timestamp: num(l.timestamp, Date.now()),
+          durationMinutes: Math.max(1, Math.round(num(l.durationMinutes, 1))),
+          rating: Math.max(1, Math.min(5, Math.round(num(l.rating, 5)))),
+          notes: String(l.notes || '')
+        });
+      });
+      out.selectedSubjectId = ids.has(raw.selectedSubjectId) ? raw.selectedSubjectId : (out.subjects[0] ? out.subjects[0].id : null);
+      return out;
+    }
+
+    function loadInitialState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) return normalizeState(JSON.parse(raw));
+      } catch (e) {
+        console.error("Errore lettura storage, caricamento default", e);
+      }
+      return JSON.parse(JSON.stringify(DEFAULT_DATA));
+    }
+
+    function saveState() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } catch (e) {
+        console.error("Impossibile salvare in localStorage", e);
+      }
+    }
+
+    /* 2. AUDIO (creato al primo tocco: iOS lo blocca altrimenti) */
+    let audioCtx = null;
+    function getAudio() {
+      try {
+        if (!audioCtx) {
+          const AC = window.AudioContext || window.webkitAudioContext;
+          if (AC) audioCtx = new AC();
+        }
+        if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+      } catch (e) {}
+      return audioCtx;
+    }
+    function playChime() {
+      try {
+        const ctx = getAudio();
+        if (ctx) {
+          const now = ctx.currentTime;
+          const osc1 = ctx.createOscillator();
+          const osc2 = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc1.type = 'sine';
+          osc2.type = 'sine';
+          osc1.frequency.setValueAtTime(587.33, now);
+          osc2.frequency.setValueAtTime(880.00, now + 0.12);
+          gain.gain.setValueAtTime(0, now);
+          gain.gain.linearRampToValueAtTime(0.2, now + 0.05);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + 1.2);
+          osc1.connect(gain);
+          osc2.connect(gain);
+          gain.connect(ctx.destination);
+          osc1.start(now);
+          osc2.start(now + 0.12);
+          osc1.stop(now + 1.2);
+          osc2.stop(now + 1.2);
+        }
+        if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+      } catch (e) {}
+    }
+
+    /* 3. LOGICA FOCUS TIMER (delta time + ripristino dopo chiusura app) */
+    const TIMER_KEY = 'study_os_timer_v1';
+    const PLAY_ICON = '<svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>';
+    let timerInterval = null;
+    let timerIsRunning = false;
+    let timerStartTime = 0;
+    let timerAccumulatedMs = 0;
+    let chosenMinutes = state.settings.timerDurationMinutes || 25;
+    let tempCustomMinutes = chosenMinutes;
+    let selectedRating = 5;
+    let pendingSession = null;
+    let wakeLock = null;
+
+    const ringProgress = document.getElementById('ringProgress');
+    const timerDigits = document.getElementById('timerDigits');
+    const timerModeTag = document.getElementById('timerModeTag');
+    const startPauseBtn = document.getElementById('startPauseTimerBtn');
+    const finishBtn = document.getElementById('finishEarlyBtn');
+    const CIRCUMFERENCE = 2 * Math.PI * 115;
+
+    function formatTime(totalSec) {
+      const m = Math.floor(totalSec / 60);
+      const s = totalSec % 60;
+      return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    }
+
+    function getElapsedMs() {
+      return timerAccumulatedMs + (timerIsRunning ? Date.now() - timerStartTime : 0);
+    }
+
+    function saveTimerState() {
+      try {
+        if (!timerIsRunning && timerAccumulatedMs === 0) { localStorage.removeItem(TIMER_KEY); return; }
+        localStorage.setItem(TIMER_KEY, JSON.stringify({
+          running: timerIsRunning, startTime: timerStartTime, accumulatedMs: timerAccumulatedMs,
+          mode: state.settings.timerMode, minutes: chosenMinutes
+        }));
+      } catch (e) {}
+    }
+
+    async function requestWakeLock() {
+      try {
+        if ('wakeLock' in navigator && !wakeLock) {
+          wakeLock = await navigator.wakeLock.request('screen');
+          wakeLock.addEventListener('release', () => { wakeLock = null; });
+        }
+      } catch (e) {}
+    }
+    function releaseWakeLock() {
+      try { if (wakeLock) { wakeLock.release(); wakeLock = null; } } catch (e) {}
+    }
+
+    function setStartBtn(running, resumable) {
+      if (running) {
+        startPauseBtn.innerHTML = '<span>Pausa</span>';
+        startPauseBtn.classList.remove('btn-primary');
+        startPauseBtn.classList.add('btn-secondary');
+      } else {
+        startPauseBtn.innerHTML = PLAY_ICON + '<span>' + (resumable ? 'Riprendi' : 'Inizia') + '</span>';
+        startPauseBtn.classList.add('btn-primary');
+        startPauseBtn.classList.remove('btn-secondary');
+      }
+    }
+
+    function updateTimerUI() {
+      const mode = state.settings.timerMode;
+      const targetSec = chosenMinutes * 60;
+      const elapsedSec = Math.floor(getElapsedMs() / 1000);
+      finishBtn.hidden = elapsedSec < 60;
+
+      if (mode === 'countdown') {
+        const remainingSec = Math.max(0, targetSec - elapsedSec);
+        timerDigits.textContent = formatTime(remainingSec);
+        timerModeTag.textContent = "COUNTDOWN";
+        const progress = Math.min(1, elapsedSec / targetSec);
+        ringProgress.style.strokeDashoffset = (CIRCUMFERENCE * progress);
+        if (remainingSec === 0 && timerIsRunning) {
+          finishSession(chosenMinutes, true);
+        }
+      } else {
+        timerDigits.textContent = formatTime(elapsedSec);
+        timerModeTag.textContent = "CRONOMETRO";
+        const cycleSec = (elapsedSec % 3600);
+        ringProgress.style.strokeDashoffset = CIRCUMFERENCE * (1 - (cycleSec / 3600));
+      }
+    }
+
+    function startTimer() {
+      if (timerIsRunning) return;
+      getAudio();
+      timerStartTime = Date.now();
+      timerIsRunning = true;
+      setStartBtn(true);
+      timerInterval = setInterval(updateTimerUI, 300);
+      requestWakeLock();
+      saveTimerState();
+    }
+
+    function pauseTimer() {
+      if (!timerIsRunning) return;
+      timerAccumulatedMs += Date.now() - timerStartTime;
+      timerIsRunning = false;
+      clearInterval(timerInterval);
+      setStartBtn(false, true);
+      releaseWakeLock();
+      saveTimerState();
+      updateTimerUI();
+    }
+
+    function resetTimer() {
+      clearInterval(timerInterval);
+      timerIsRunning = false;
+      timerAccumulatedMs = 0;
+      setStartBtn(false, false);
+      ringProgress.style.strokeDashoffset = 0;
+      releaseWakeLock();
+      saveTimerState();
+      updateTimerUI();
+    }
+
+    function finishSession(minutes, withChime) {
+      pauseTimer();
+      if (withChime) playChime();
+      resetTimer();
+      const mins = Math.max(1, Math.round(minutes));
+      const subj = state.subjects.find(s => s.id === state.selectedSubjectId);
+      pendingSession = { minutes: mins, subjectId: subj ? subj.id : null };
+      document.getElementById('sessionRecordedMinutes').textContent = mins;
+      document.getElementById('sessionRecordedSubject').textContent = subj ? subj.name : 'Studio';
+      document.getElementById('sessionNotesInput').value = '';
+      setModalRating(5);
+      openModal('saveSessionModal');
+    }
+
+    function finishEarly() {
+      finishSession(getElapsedMs() / 60000, false);
+    }
+
+    function syncTimerControls() {
+      const stopwatch = state.settings.timerMode === 'stopwatch';
+      document.getElementById('modeCountdownBtn').classList.toggle('active', !stopwatch);
+      document.getElementById('modeStopwatchBtn').classList.toggle('active', stopwatch);
+      document.querySelectorAll('.preset-chip').forEach(c => c.classList.toggle('active', parseInt(c.getAttribute('data-min')) === chosenMinutes));
+      document.getElementById('presetChipsContainer').style.opacity = stopwatch ? '0.4' : '1';
+    }
+
+    function restoreTimer() {
+      try {
+        const raw = localStorage.getItem(TIMER_KEY);
+        if (!raw) return;
+        const t = JSON.parse(raw);
+        if (t.mode !== state.settings.timerMode || t.minutes !== chosenMinutes) { localStorage.removeItem(TIMER_KEY); return; }
+        timerAccumulatedMs = Number(t.accumulatedMs) || 0;
+        if (t.running) {
+          timerStartTime = Number(t.startTime) || Date.now();
+          timerIsRunning = true;
+          setStartBtn(true);
+          timerInterval = setInterval(updateTimerUI, 300);
+          requestWakeLock();
+        } else {
+          setStartBtn(false, true);
+        }
+      } catch (e) {}
+    }
+
+    /* 4. GESTIONE MATERIE, TASK & DIARIO */
+    function renderActiveSubjectDisplay() {
+      const subj = state.subjects.find(s => s.id === state.selectedSubjectId) || state.subjects[0];
+      const box = document.getElementById('activeSubjectDisplay');
+      if (subj) {
+        state.selectedSubjectId = subj.id;
+        box.innerHTML = `<span class="color-dot" style="background:${subj.color};"></span><span>${escapeHtml(subj.name)}</span>`;
+      } else {
+        box.innerHTML = `<span style="color:var(--text-sec);">Nessuna Materia</span>`;
+      }
+    }
+
+    function renderSubjects() {
+      const container = document.getElementById('subjectsListContainer');
+      if (state.subjects.length === 0) {
+        container.innerHTML = `<div style="text-align:center; padding:30px; color:var(--text-sec); font-size:14px;">Nessuna materia presente. Creane una con il tasto + in alto.</div>`;
+        return;
+      }
+
+      container.innerHTML = state.subjects.map(subj => {
+        const subTasks = state.tasks.filter(t => t.subjectId === subj.id);
+        const completedCount = subTasks.filter(t => t.done).length;
+
+        return `
+          <div class="subject-group">
+            <div class="subject-header-row" data-click-subject="${subj.id}">
+              <span class="color-dot" style="background:${subj.color}; width:16px; height:16px;"></span>
+              <div class="subject-meta">
+                <div class="subject-name">${escapeHtml(subj.name)}</div>
+                <div class="subject-stats-text">${completedCount}/${subTasks.length} compiti completati</div>
+              </div>
+              <div class="item-actions" onclick="event.stopPropagation();">
+                <button class="icon-action-btn" data-edit-subject="${subj.id}" aria-label="Modifica Materia">
+                  <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                </button>
+                <button class="icon-action-btn delete-btn" data-delete-subject="${subj.id}" aria-label="Elimina Materia">
+                  <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                </button>
+              </div>
+            </div>
+            
+            <div class="tasks-sublist">
+              ${subTasks.map(t => `
+                <div class="task-item-row">
+                  <div class="task-checkbox ${t.done ? 'checked' : ''}" data-toggle-task="${t.id}"></div>
+                  <div class="task-title-text ${t.done ? 'done' : ''}">${escapeHtml(t.title)}</div>
+                  <button class="icon-action-btn delete-btn" data-task-delete="${t.id}" style="width:26px; height:26px;" aria-label="Elimina Task">
+                    <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                  </button>
+                </div>
+              `).join('')}
+              <button class="btn-capsule btn-secondary" data-add-task-to="${subj.id}" style="padding:6px 14px; font-size:12px; margin-top:8px;">+ Aggiungi compito</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      attachSubjectListeners();
+    }
+
+    function attachSubjectListeners() {
+      // Selezione Materia dal click sulla card
+      document.querySelectorAll('[data-click-subject]').forEach(el => {
+        el.onclick = () => {
+          state.selectedSubjectId = el.getAttribute('data-click-subject');
+          saveState();
+          renderActiveSubjectDisplay();
+          switchTab('view-focus');
+        };
+      });
+
+      // Modifica Materia
+      document.querySelectorAll('[data-edit-subject]').forEach(el => {
+        el.onclick = (e) => {
+          e.stopPropagation();
+          openEditSubjectModal(el.getAttribute('data-edit-subject'));
+        };
+      });
+
+      // Cancellazione Materia
+      document.querySelectorAll('[data-delete-subject]').forEach(el => {
+        el.onclick = (e) => {
+          e.stopPropagation();
+          promptDeleteSubject(el.getAttribute('data-delete-subject'));
+        };
+      });
+
+      // Toggle Task
+      document.querySelectorAll('[data-toggle-task]').forEach(el => {
+        el.onclick = () => {
+          const tId = el.getAttribute('data-toggle-task');
+          const task = state.tasks.find(t => t.id === tId);
+          if (task) {
+            task.done = !task.done;
+            saveState();
+            renderSubjects();
+          }
+        };
+      });
+
+      // Elimina Task
+      document.querySelectorAll('[data-task-delete]').forEach(el => {
+        el.onclick = (e) => {
+          e.stopPropagation();
+          const tId = el.getAttribute('data-task-delete');
+          state.tasks = state.tasks.filter(t => t.id !== tId);
+          saveState();
+          renderSubjects();
+        };
+      });
+
+      // Aggiungi Task
+      document.querySelectorAll('[data-add-task-to]').forEach(el => {
+        el.onclick = () => {
+          document.getElementById('taskTargetSubjectId').value = el.getAttribute('data-add-task-to');
+          document.getElementById('taskTitleInput').value = '';
+          openModal('taskModal');
+        };
+      });
+    }
+
+    function renderDiary(filterQuery = '') {
+      const container = document.getElementById('diaryEntriesContainer');
+      const q = filterQuery.toLowerCase().trim();
+
+      const filtered = state.logs.filter(log => {
+        if (!q) return true;
+        const subj = state.subjects.find(s => s.id === log.subjectId);
+        const subjName = subj ? subj.name.toLowerCase() : '';
+        const notes = (log.notes || '').toLowerCase();
+        return subjName.includes(q) || notes.includes(q);
+      }).sort((a, b) => b.timestamp - a.timestamp);
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<div style="text-align:center; padding:40px 20px; color:var(--text-sec); font-size:14px;">Nessuna sessione registrata nel diario.</div>`;
+        return;
+      }
+
+      container.innerHTML = filtered.map(log => {
+        const subj = state.subjects.find(s => s.id === log.subjectId) || { name: 'Materia non associata', color: '#8E8E93' };
+        const d = new Date(log.timestamp);
+        const dateStr = d.toLocaleDateString('it-IT', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+
+        return `
+          <div class="diary-entry-card">
+            <div class="diary-top">
+              <div class="subject-pill">
+                <span class="color-dot" style="background:${subj.color};"></span>
+                <span>${escapeHtml(subj.name)}</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span class="diary-duration-badge">${log.durationMinutes} min</span>
+                <button class="icon-action-btn delete-btn" data-delete-log="${log.id}" style="width:28px; height:28px;" aria-label="Elimina Nota">
+                  <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                </button>
+              </div>
+            </div>
+            ${log.notes ? `<div class="diary-note-text">${escapeHtml(log.notes)}</div>` : ''}
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:2px;">
+              <span class="diary-date">${dateStr}</span>
+              <span class="rating-stars">${'★'.repeat(log.rating || 5)}${'☆'.repeat(5 - (log.rating || 5))}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      document.querySelectorAll('[data-delete-log]').forEach(btn => {
+        btn.onclick = () => {
+          promptDeleteLog(btn.getAttribute('data-delete-log'));
+        };
+      });
+    }
+
+    /* 5. STATISTICHE CON GRAFICI SVG */
+    function renderStats() {
+      // 1. Minuti e sessioni di oggi
+      const now = new Date();
+      const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+      const todayLogs = state.logs.filter(l => l.timestamp >= startOfDay);
+      const totalMinToday = todayLogs.reduce((acc, l) => acc + (l.durationMinutes || 0), 0);
+      
+      const hours = Math.floor(totalMinToday / 60);
+      const mins = totalMinToday % 60;
+      document.getElementById('todayFocusHours').textContent = `${hours}h ${mins}m`;
+      document.getElementById('todaySessionCount').textContent = `${todayLogs.length} sessioni`;
+
+      // 2. Grafico a barre (ultimi 7 giorni)
+      renderWeeklyBarChart();
+
+      // 3. Distribuzione per materia
+      renderSubjectDistribution();
+      updateBackupInfo();
+    }
+
+    function renderWeeklyBarChart() {
+      const container = document.getElementById('weekBarChartContainer');
+      const days = [];
+      const t0 = new Date();
+      for (let i = 6; i >= 0; i--) {
+        days.push(new Date(t0.getFullYear(), t0.getMonth(), t0.getDate() - i));
+      }
+
+      const dayTotals = days.map(d => {
+        const start = d.getTime();
+        const end = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1).getTime();
+        return state.logs
+          .filter(l => l.timestamp >= start && l.timestamp < end)
+          .reduce((sum, l) => sum + (l.durationMinutes || 0), 0);
+      });
+
+      const maxVal = Math.max(...dayTotals, 60); // almeno 60 min come scala
+      const chartWidth = container.clientWidth || 320;
+      const chartHeight = 150;
+      const barWidth = 24;
+      const gap = (chartWidth - (7 * barWidth)) / 8;
+
+      let barsSvg = `<svg width="100%" height="100%" viewBox="0 0 ${chartWidth} ${chartHeight}">`;
+      dayTotals.forEach((val, i) => {
+        const x = gap + i * (barWidth + gap);
+        const h = (val / maxVal) * 95;
+        const y = 115 - h;
+        const dayLabel = days[i].toLocaleDateString('it-IT', { weekday: 'narrow' });
+        barsSvg += `
+          <rect x="${x}" y="${y}" width="${barWidth}" height="${h}" rx="6" fill="#007AFF" opacity="${val > 0 ? 0.9 : 0.15}"/>
+          <text x="${x + barWidth/2}" y="135" font-size="11" font-weight="600" style="fill:var(--text-sec)" text-anchor="middle">${dayLabel}</text>
+          ${val > 0 ? `<text x="${x + barWidth/2}" y="${y - 4}" font-size="10" font-weight="600" style="fill:var(--text)" text-anchor="middle">${val}m</text>` : ''}
+        `;
+      });
+      barsSvg += `</svg>`;
+      container.innerHTML = barsSvg;
+    }
+
+    function updateBackupInfo() {
+      const el = document.getElementById('backupInfo');
+      const t = state.meta && state.meta.lastBackup;
+      if (!t) {
+        el.textContent = 'Nessun backup ancora: esportane uno ogni tanto.';
+        el.style.color = '#FF9500';
+        return;
+      }
+      const days = Math.floor((Date.now() - t) / 86400000);
+      el.textContent = days <= 0 ? 'Ultimo backup: oggi' : `Ultimo backup: ${days} ${days === 1 ? 'giorno' : 'giorni'} fa`;
+      el.style.color = days > 14 ? '#FF9500' : 'var(--text-sec)';
+    }
+
+    function renderSubjectDistribution() {
+      const container = document.getElementById('subjectDistributionContainer');
+      const subjectMinutes = {};
+      let totalAll = 0;
+      state.logs.forEach(l => {
+        const m = l.durationMinutes || 0;
+        subjectMinutes[l.subjectId] = (subjectMinutes[l.subjectId] || 0) + m;
+        totalAll += m;
+      });
+
+      if (totalAll === 0) {
+        container.innerHTML = `<div style="font-size:13px; color:var(--text-sec); padding:10px 0;">Ancora nessuna sessione completata.</div>`;
+        return;
+      }
+
+      const known = new Set(state.subjects.map(s => s.id));
+      const rows = state.subjects.map(s => ({ name: s.name, color: s.color, mins: subjectMinutes[s.id] || 0 }));
+      const orphan = Object.keys(subjectMinutes).filter(id => !known.has(id)).reduce((a, id) => a + subjectMinutes[id], 0);
+      if (orphan > 0) rows.push({ name: 'Materia eliminata', color: '#8E8E93', mins: orphan });
+
+      let html = `<div style="display:flex; flex-direction:column; gap:12px; margin-top:8px;">`;
+      rows.filter(r => r.mins > 0).sort((a, b) => b.mins - a.mins).forEach(r => {
+        const perc = Math.round((r.mins / totalAll) * 100);
+        html += `
+          <div>
+            <div style="display:flex; justify-content:space-between; font-size:13px; font-weight:600; margin-bottom:4px;">
+              <span style="display:flex; align-items:center; gap:6px;">
+                <span class="color-dot" style="background:${r.color};"></span>
+                <span>${escapeHtml(r.name)}</span>
+              </span>
+              <span>${r.mins} min (${perc}%)</span>
+            </div>
+            <div style="height:7px; background:var(--card-subtle); border-radius:4px; overflow:hidden;">
+              <div style="height:100%; width:${perc}%; background:${r.color}; border-radius:4px;"></div>
+            </div>
+          </div>
+        `;
+      });
+      html += `</div>`;
+      container.innerHTML = html;
+    }
+
+    /* 6. MODALI, CONFERME E GESTORI EVENTI */
+    function openModal(id) {
+      document.getElementById(id).classList.add('active');
+    }
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('active');
+    }
+    document.querySelectorAll('[data-close-modal]').forEach(b => {
+      b.onclick = () => closeModal(b.getAttribute('data-close-modal'));
+    });
+
+    // Rating a Stelle
+    function setModalRating(val) {
+      selectedRating = val;
+      document.querySelectorAll('#modalStarRating span').forEach(s => {
+        const sVal = parseInt(s.getAttribute('data-star'));
+        s.style.color = sVal <= val ? '#FF9500' : 'var(--text-ter)';
+      });
+    }
+    document.querySelectorAll('#modalStarRating span').forEach(s => {
+      s.onclick = () => setModalRating(parseInt(s.getAttribute('data-star')));
+    });
+
+    // Color Picker Materie
+    function renderColorPicker(selectedColor) {
+      const grid = document.getElementById('colorPickerGrid');
+      grid.innerHTML = COLOR_PALETTE.map(c => `
+        <div class="color-option ${c.toLowerCase() === selectedColor.toLowerCase() ? 'selected' : ''}" style="background:${c};" data-color="${c}"></div>
+      `).join('');
+      grid.querySelectorAll('.color-option').forEach(opt => {
+        opt.onclick = () => {
+          grid.querySelectorAll('.color-option').forEach(o => o.classList.remove('selected'));
+          opt.classList.add('selected');
+        };
+      });
+    }
+
+    function openEditSubjectModal(subjectId = null) {
+      const nameInput = document.getElementById('subjectNameInput');
+      const editIdInput = document.getElementById('editSubjectId');
+      const title = document.getElementById('subjectModalTitle');
+
+      if (subjectId) {
+        const subj = state.subjects.find(s => s.id === subjectId);
+        if (!subj) return;
+        editIdInput.value = subj.id;
+        nameInput.value = subj.name;
+        title.textContent = "Modifica Materia";
+        renderColorPicker(subj.color);
+      } else {
+        editIdInput.value = '';
+        nameInput.value = '';
+        title.textContent = "Nuova Materia";
+        renderColorPicker(COLOR_PALETTE[0]);
+      }
+      openModal('subjectModal');
+    }
+
+    // Salva Materia
+    document.getElementById('saveSubjectBtn').onclick = () => {
+      const name = document.getElementById('subjectNameInput').value.trim();
+      if (!name) return;
+      const editId = document.getElementById('editSubjectId').value;
+      const selectedColorEl = document.querySelector('#colorPickerGrid .color-option.selected');
+      const color = selectedColorEl ? selectedColorEl.getAttribute('data-color') : COLOR_PALETTE[0];
+
+      if (editId) {
+        const s = state.subjects.find(x => x.id === editId);
+        if (s) {
+          s.name = name;
+          s.color = color;
+        }
+      } else {
+        const newSub = {
+          id: 'sub_' + Date.now(),
+          name,
+          color
+        };
+        state.subjects.push(newSub);
+        if (!state.selectedSubjectId) state.selectedSubjectId = newSub.id;
+      }
+
+      saveState();
+      renderSubjects();
+      renderActiveSubjectDisplay();
+      closeModal('subjectModal');
+    };
+
+    // Salva Task
+    document.getElementById('saveTaskBtn').onclick = () => {
+      const subjId = document.getElementById('taskTargetSubjectId').value;
+      const title = document.getElementById('taskTitleInput').value.trim();
+      if (!title || !subjId) return;
+
+      state.tasks.push({
+        id: 'tsk_' + Date.now(),
+        subjectId: subjId,
+        title,
+        done: false
+      });
+
+      saveState();
+      renderSubjects();
+      closeModal('taskModal');
+    };
+
+    // Salva Sessione Diario
+    document.getElementById('confirmSaveSessionBtn').onclick = () => {
+      if (pendingSession) {
+        state.logs.push({
+          id: 'log_' + Date.now(),
+          subjectId: pendingSession.subjectId,
+          timestamp: Date.now(),
+          durationMinutes: pendingSession.minutes,
+          rating: selectedRating,
+          notes: document.getElementById('sessionNotesInput').value.trim()
+        });
+        pendingSession = null;
+        saveState();
+        renderDiary();
+        renderStats();
+      }
+      closeModal('saveSessionModal');
+    };
+
+    // Conferme di eliminazione
+    let pendingAction = null;
+    function showConfirmModal(title, msg, onConfirm, label = 'Elimina Definitivamente') {
+      document.getElementById('confirmActionConfirmBtn').textContent = label;
+      document.getElementById('confirmModalTitle').textContent = title;
+      document.getElementById('confirmModalMessage').textContent = msg;
+      pendingAction = onConfirm;
+      openModal('confirmActionModal');
+    }
+    document.getElementById('confirmActionConfirmBtn').onclick = () => {
+      if (pendingAction) pendingAction();
+      closeModal('confirmActionModal');
+    };
+
+    function promptDeleteSubject(id) {
+      const subj = state.subjects.find(s => s.id === id);
+      if (!subj) return;
+      showConfirmModal("Elimina Materia", `Vuoi davvero eliminare "${subj.name}" e tutti i suoi task? Le sessioni già registrate restano nel diario.`, () => {
+        state.subjects = state.subjects.filter(s => s.id !== id);
+        state.tasks = state.tasks.filter(t => t.subjectId !== id);
+        if (state.selectedSubjectId === id) {
+          state.selectedSubjectId = state.subjects.length > 0 ? state.subjects[0].id : null;
+        }
+        saveState();
+        renderSubjects();
+        renderActiveSubjectDisplay();
+        renderStats();
+      });
+    }
+
+    function promptDeleteLog(id) {
+      showConfirmModal("Elimina Nota", "Vuoi cancellare questa voce dal tuo diario?", () => {
+        state.logs = state.logs.filter(l => l.id !== id);
+        saveState();
+        renderDiary();
+        renderStats();
+      });
+    }
+
+    // Modalità Timer & Preset
+    function guardTimerChange(fn) {
+      if (timerIsRunning || timerAccumulatedMs > 0) {
+        showConfirmModal('Azzerare il timer?', 'La sessione in corso verrà azzerata e il tempo non sarà salvato.', fn, 'Azzera e cambia');
+      } else {
+        fn();
+      }
+    }
+    function applyMode(mode) {
+      state.settings.timerMode = mode;
+      saveState();
+      resetTimer();
+      syncTimerControls();
+    }
+    document.getElementById('modeCountdownBtn').onclick = () => {
+      if (state.settings.timerMode !== 'countdown') guardTimerChange(() => applyMode('countdown'));
+    };
+    document.getElementById('modeStopwatchBtn').onclick = () => {
+      if (state.settings.timerMode !== 'stopwatch') guardTimerChange(() => applyMode('stopwatch'));
+    };
+
+    function applyMinutes(m) {
+      chosenMinutes = m;
+      state.settings.timerDurationMinutes = m;
+      saveState();
+      resetTimer();
+      syncTimerControls();
+    }
+    document.querySelectorAll('.preset-chip').forEach(chip => {
+      chip.onclick = () => {
+        const m = parseInt(chip.getAttribute('data-min'));
+        if (m !== chosenMinutes) guardTimerChange(() => applyMinutes(m));
+      };
+    });
+
+    document.getElementById('openTimerConfigBtn').onclick = () => {
+      tempCustomMinutes = chosenMinutes;
+      document.getElementById('customMinutesDisplay').textContent = tempCustomMinutes;
+      openModal('timerConfigModal');
+    };
+    document.getElementById('stepperMinus5').onclick = () => updateTempMinutes(-5);
+    document.getElementById('stepperMinus1').onclick = () => updateTempMinutes(-1);
+    document.getElementById('stepperPlus1').onclick = () => updateTempMinutes(1);
+    document.getElementById('stepperPlus5').onclick = () => updateTempMinutes(5);
+
+    function updateTempMinutes(delta) {
+      tempCustomMinutes = Math.max(1, Math.min(180, tempCustomMinutes + delta));
+      document.getElementById('customMinutesDisplay').textContent = tempCustomMinutes;
+    }
+
+    document.getElementById('saveCustomTimerBtn').onclick = () => {
+      if (tempCustomMinutes === chosenMinutes) { closeModal('timerConfigModal'); return; }
+      guardTimerChange(() => { applyMinutes(tempCustomMinutes); closeModal('timerConfigModal'); });
+    };
+
+    // Start / Pause / Reset / Termina
+    startPauseBtn.onclick = () => {
+      if (timerIsRunning) pauseTimer();
+      else startTimer();
+    };
+    document.getElementById('ringWrapperClick').onclick = () => startPauseBtn.onclick();
+    document.getElementById('resetTimerBtn').onclick = () => resetTimer();
+    finishBtn.onclick = () => showConfirmModal('Terminare la sessione?', 'Il tempo trascorso verrà salvato nel diario.', finishEarly, 'Termina e salva');
+
+    // Chiudi i modali toccando fuori (tranne "Registra sessione": evita di perdere il tempo)
+    document.querySelectorAll('.modal-overlay').forEach(ov => {
+      if (ov.id === 'saveSessionModal') return;
+      ov.addEventListener('click', e => { if (e.target === ov) closeModal(ov.id); });
+    });
+    // Invio per confermare
+    [['subjectNameInput', 'saveSubjectBtn'], ['taskTitleInput', 'saveTaskBtn']].forEach(([i, b]) => {
+      document.getElementById(i).addEventListener('keydown', e => {
+        if (e.key === 'Enter') { e.preventDefault(); document.getElementById(b).click(); }
+      });
+    });
+
+    // Selettore Materia Rapido
+    document.getElementById('selectActiveSubjectCard').onclick = () => {
+      switchTab('view-subjects');
+    };
+    document.getElementById('openNewSubjectModalBtn').onclick = () => {
+      openEditSubjectModal(null);
+    };
+
+    // Ricerca nel diario
+    document.getElementById('diarySearchInput').oninput = (e) => {
+      renderDiary(e.target.value);
+    };
+
+    // Gestione Switch Tab
+    function switchTab(viewId) {
+      document.querySelectorAll('.view-container').forEach(v => v.classList.remove('active'));
+      document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+
+      const targetView = document.getElementById(viewId);
+      const targetBtn = document.querySelector(`[data-target="${viewId}"]`);
+
+      if (targetView) targetView.classList.add('active');
+      if (targetBtn) targetBtn.classList.add('active');
+
+      if (viewId === 'view-focus') renderStats();
+      if (viewId === 'view-subjects') renderSubjects();
+      if (viewId === 'view-diary') renderDiary();
+      if (viewId === 'view-stats') renderStats();
+    }
+
+    document.querySelectorAll('.tab-button').forEach(btn => {
+      btn.onclick = () => switchTab(btn.getAttribute('data-target'));
+    });
+
+    // Esportazione e Importazione JSON
+    function markBackup() {
+      state.meta = state.meta || {};
+      state.meta.lastBackup = Date.now();
+      saveState();
+      updateBackupInfo();
+    }
+
+    document.getElementById('exportDataBtn').onclick = async () => {
+      const json = JSON.stringify(state, null, 2);
+      const name = `backup_studio_${new Date().toISOString().slice(0, 10)}.json`;
+      try {
+        const file = new File([json], name, { type: 'application/json' });
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({ files: [file], title: 'Backup Studio OS' });
+          markBackup();
+          return;
+        }
+      } catch (e) {
+        if (e && e.name === 'AbortError') return;
+      }
+      const url = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = name;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+      markBackup();
+    };
+
+    document.getElementById('importDataTriggerBtn').onclick = () => {
+      document.getElementById('importFileInput').click();
+    };
+
+    document.getElementById('importFileInput').onchange = (e) => {
+      const input = e.target;
+      const file = input.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const imported = JSON.parse(event.target.result);
+          if (!imported || !Array.isArray(imported.subjects)) {
+            alert("Formato file non valido.");
+            return;
+          }
+          showConfirmModal('Ripristinare il backup?', 'I dati attuali verranno sostituiti da quelli del file.', () => {
+            state = normalizeState(imported);
+            chosenMinutes = state.settings.timerDurationMinutes;
+            saveState();
+            resetTimer();
+            syncTimerControls();
+            renderActiveSubjectDisplay();
+            renderSubjects();
+            renderDiary();
+            renderStats();
+            alert("Backup ripristinato con successo!");
+          }, 'Ripristina');
+        } catch (err) {
+          alert("Errore nella lettura del file JSON.");
+        }
+      };
+      reader.onloadend = () => { input.value = ''; };
+      reader.readAsText(file);
+    };
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/[&<>"']/g, m => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+      }[m]));
+    }
+
+    // Inizializzazione data e viste
+    const optionsDate = { weekday: 'long', day: 'numeric', month: 'long' };
+    function updateDateLabel() {
+      document.getElementById('todayDateLabel').textContent = new Date().toLocaleDateString('it-IT', optionsDate);
+    }
+    updateDateLabel();
+    renderActiveSubjectDisplay();
+    renderSubjects();
+    renderDiary();
+    renderStats();
+    syncTimerControls();
+    restoreTimer();
+    updateTimerUI();
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState !== 'visible') return;
+      updateDateLabel();
+      updateTimerUI();
+      renderStats();
+      if (timerIsRunning) requestWakeLock();
+    });
+
+    if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+    if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+      window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+    }
+  </script>
+</body>
+</html>
